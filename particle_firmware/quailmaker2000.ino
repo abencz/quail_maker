@@ -1,4 +1,7 @@
 // This #include statement was automatically added by the Particle IDE.
+#include "Adafruit_PWMServoDriver.h"
+
+// This #include statement was automatically added by the Particle IDE.
 #include "ServoEaser.h"
 
 // This #include statement was automatically added by the Particle IDE.
@@ -141,6 +144,8 @@ const int egg_ease_time = 2000; // time to move eggs between positions [ms]
 retained int current_angle = 0;
 String operating_mode = "initializing";
 
+Adafruit_PWMServoDriver pwm;
+
 Servo egg_turner;
 ServoEaser egg_easer;
 Timer egg_timer(params.egg_turn_time, turn_eggs);
@@ -208,7 +213,26 @@ void turn_eggs()
     egg_easer.easeTo(next_angle, egg_ease_time);
 }
 
+// you can use this function if you'd like to set the pulse length in seconds
+// e.g. setServoPulse(0, 0.001) is a ~1 millisecond pulse width. its not precise!
+void setServoPulse(uint8_t n, double pulse) {
+  double pulselength;
+  
+  pulselength = 1000000;   // 1,000,000 us per second
+  pulselength /= 60;   // 60 Hz
+  
+  pulselength /= 4096;  // 12 bits of resolution
+  
+  pulse *= 1000;
+  pulse /= pulselength;
+  
+  pwm.setPWM(n, 0, pulse);
+}
+
 void setup() {
+    pwm.begin();
+    pwm.setPWMFreq(60);  // Analog servos run at ~60 Hz updates
+
     sensor.begin();
     
     // initialize egg_turner
@@ -254,4 +278,17 @@ void loop() {
     egg_easer.update();
     current_angle = egg_easer.getCurrPos();
     last_millis = millis();
+    
+    pwm.setPin(0, 0);
+    pwm.writeMicroseconds(15, 1000);
+    delay(10000);
+    pwm.setPin(0, 1023);
+    pwm.writeMicroseconds(15, 1250);
+    delay(10000);
+    pwm.setPin(0, 2047);
+    pwm.writeMicroseconds(15, 1500);
+    delay(10000);
+    pwm.setPin(0, 4095);
+    pwm.writeMicroseconds(15, 2000);
+    delay(10000);
 }
