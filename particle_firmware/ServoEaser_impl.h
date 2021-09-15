@@ -1,5 +1,5 @@
 //
-// ServoEaser.cpp -- Arduino library for Servo easing
+// ServoEaser<T>.cpp -- Arduino library for Servo easing
 //
 // Uses concepts from:
 // -- http://portfolio.tobiastoft.dk/331886/Easing-library-for-Arduino
@@ -11,7 +11,7 @@
 // 
 //
 
-#include "ServoEaser.h"
+// #include "ServoEaser<T>.h"
 #include <math.h>
 
 #define DEBUG 0
@@ -53,7 +53,8 @@ inline float ServoEaser_easeInOutCubic(float t, float b, float c, float d)
 }
 
 // set up an easer with a servo and a moves list
-void ServoEaser::begin(Servo& s, int frameTime, 
+template <class T>
+void ServoEaser<T>::begin(T& s, int frameTime, 
                        ServoMove* mlist, int mcount)
 {
     begin( s, frameTime ); //, servo.read() );
@@ -61,7 +62,8 @@ void ServoEaser::begin(Servo& s, int frameTime,
 }
 
 // set up an easer with just a servo and a starting position
-void ServoEaser::begin(Servo& s, int frameTime)
+template <class T>
+void ServoEaser<T>::begin(T& s, int frameTime)
 {
     servo = &s;
     frameMillis = frameTime;
@@ -81,7 +83,8 @@ void ServoEaser::begin(Servo& s, int frameTime)
 }
 
 // reset easer to initial conditions, does not nuke easingFunc or arrivedFunc
-void ServoEaser::reset()
+template <class T>
+void ServoEaser<T>::reset()
 {
     if (servo)
     {
@@ -101,17 +104,20 @@ void ServoEaser::reset()
 }
 
 //
-void ServoEaser::play( ServoMove* mlist, int mcount)
+template <class T>
+void ServoEaser<T>::play( ServoMove* mlist, int mcount)
 {
     play( mlist, mcount, 0, 0);
 }
 //
-void ServoEaser::play( ServoMove* mlist, int mcount, int mreps )
+template <class T>
+void ServoEaser<T>::play( ServoMove* mlist, int mcount, int mreps )
 {
     play( mlist, mcount, mreps, 0 );
 }
 
-void ServoEaser::play( ServoMove* mlist, int mcount, int mreps, int mindex)
+template <class T>
+void ServoEaser<T>::play( ServoMove* mlist, int mcount, int mreps, int mindex)
 {
     moves = mlist;
     movesCount = (mcount>0) ? mcount : 0;
@@ -126,7 +132,8 @@ void ServoEaser::play( ServoMove* mlist, int mcount, int mreps, int mindex)
 }
 
 // manual, non-moves list, control of easer position
-void ServoEaser::easeTo( int pos, int dur )
+template <class T>
+void ServoEaser<T>::easeTo( int pos, int dur )
 {
     movesCount = 0;  // no longer doing moves list
     startPos = currPos;
@@ -138,7 +145,8 @@ void ServoEaser::easeTo( int pos, int dur )
 }
 
 // used internally to select next servo position
-void ServoEaser::getNextPos()
+template <class T>
+void ServoEaser<T>::getNextPos()
 {
     unsigned long oldEndMillis = startMillis + durMillis;
 
@@ -171,7 +179,8 @@ void ServoEaser::getNextPos()
 }
 
 // call this regularly in loop()
-void ServoEaser::update()
+template <class T>
+void ServoEaser<T>::update()
 {
     unsigned long currentMillis = millis();
 
@@ -201,7 +210,8 @@ void ServoEaser::update()
 }
 
 //
-void ServoEaser::setMinMaxMicroseconds(int mi, int ma)
+template <class T>
+void ServoEaser<T>::setMinMaxMicroseconds(int mi, int ma)
 {
     min = mi;
     max = ma;
@@ -216,7 +226,9 @@ void ServoEaser::setMinMaxMicroseconds(int mi, int ma)
 #define in_max 180
 #define out_min SERVO_MIN()
 #define out_max SERVO_MAX()
-int ServoEaser::angleToMicros(float angle)
+
+template <class T>
+int ServoEaser<T>::angleToMicros(float angle)
 {
     //                 x   in_min,in_max, out_min, out_max
     //int value = map(value, 0, 180, SERVO_MIN(),  SERVO_MAX());
@@ -224,25 +236,30 @@ int ServoEaser::angleToMicros(float angle)
 }
 
 //
-void ServoEaser::useMicroseconds(boolean t)
+template <class T>
+void ServoEaser<T>::useMicroseconds(boolean t)
 {
     useMicros = t;
 }
 //
-boolean ServoEaser::usingMicroseconds()
+template <class T>
+boolean ServoEaser<T>::usingMicroseconds()
 {
     return useMicros;
 }
-void ServoEaser::setFlipped(boolean t)
+template <class T>
+void ServoEaser<T>::setFlipped(boolean t)
 {
     flipped = t;
 }
-boolean ServoEaser::isFlipped()
+template <class T>
+boolean ServoEaser<T>::isFlipped()
 {
     return flipped;
 }
 //
-void ServoEaser::start()
+template <class T>
+void ServoEaser<T>::start()
 {
     if (!running)
     {
@@ -251,27 +268,32 @@ void ServoEaser::start()
     }
 }
 //
-void ServoEaser::stop()
+template <class T>
+void ServoEaser<T>::stop()
 {
     running = false;
 }
 //
-boolean ServoEaser::isRunning()
+template <class T>
+boolean ServoEaser<T>::isRunning()
 { 
     return running;
 }
 //
-boolean ServoEaser::hasArrived()
+template <class T>
+boolean ServoEaser<T>::hasArrived()
 { 
     return arrived;
 }
 
-float ServoEaser::getCurrPos()
+template <class T>
+float ServoEaser<T>::getCurrPos()
 {
     return currPos;
 }
 
-void ServoEaser::setCurrPos(float value)
+template <class T>
+void ServoEaser<T>::setCurrPos(float value)
 {
     currPos = value;
     // AB: startPos should be set to match in this case
@@ -279,19 +301,22 @@ void ServoEaser::setCurrPos(float value)
 }
 
 // 
-void ServoEaser::setEasingFunc( EasingFunc func )
+template <class T>
+void ServoEaser<T>::setEasingFunc( EasingFunc func )
 {
     easingFunc = func;
 }
 //
-void ServoEaser::setArrivedFunc( ArrivedFunc func ) 
+template <class T>
+void ServoEaser<T>::setArrivedFunc( ArrivedFunc func ) 
 {
     arrivedFunc = func;
 }
 
 //
 /*
-void ServoEaser::setMovesList( ServoMove* mlist, int mcount )
+template <class T>
+void ServoEaser<T>::setMovesList( ServoMove* mlist, int mcount )
 {
     moves = mlist;
     movesCount = mcount;

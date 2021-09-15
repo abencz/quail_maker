@@ -8,6 +8,7 @@
 #include <Adafruit_AM2315.h>
 
 #include "I2CFan.h"
+#include "I2CServo.h"
 
 STARTUP(WiFi.selectAntenna(ANT_EXTERNAL));
 SYSTEM_MODE(SEMI_AUTOMATIC);
@@ -149,8 +150,8 @@ String operating_mode = "initializing";
 Adafruit_PWMServoDriver pwm;
 I2CFan inside_fan(pwm, 0);
 
-Servo egg_turner;
-ServoEaser egg_easer;
+I2CServo egg_turner(pwm, 15);
+ServoEaser<I2CServo> egg_easer;
 Timer egg_timer(params.egg_turn_time, turn_eggs);
 Timer load_eggs_timer(30000, load_eggs);
 Timer start_turning_eggs_timer(60000, start_turning_eggs);
@@ -216,25 +217,9 @@ void turn_eggs()
     egg_easer.easeTo(next_angle, egg_ease_time);
 }
 
-// you can use this function if you'd like to set the pulse length in seconds
-// e.g. setServoPulse(0, 0.001) is a ~1 millisecond pulse width. its not precise!
-void setServoPulse(uint8_t n, double pulse) {
-  double pulselength;
-  
-  pulselength = 1000000;   // 1,000,000 us per second
-  pulselength /= 60;   // 60 Hz
-  
-  pulselength /= 4096;  // 12 bits of resolution
-  
-  pulse *= 1000;
-  pulse /= pulselength;
-  
-  pwm.setPWM(n, 0, pulse);
-}
-
 void setup() {
     pwm.begin();
-    pwm.setPWMFreq(60);  // Analog servos run at ~60 Hz updates
+    pwm.setPWMFreq(250);  // Analog servos run at ~60 Hz updates
 
     sensor.begin();
     
@@ -246,7 +231,7 @@ void setup() {
         current_angle = params.center_angle;
     egg_timer.changePeriod(params.egg_turn_time);
     egg_timer.stop();
-    egg_turner.attach(servo_pin);
+    // egg_turner.attach(servo_pin);
     egg_easer.begin(egg_turner, servo_frame_millis);
     egg_easer.setCurrPos(current_angle);
     
@@ -282,16 +267,16 @@ void loop() {
     current_angle = egg_easer.getCurrPos();
     last_millis = millis();
     
-    inside_fan.setPower(0);
-    pwm.writeMicroseconds(15, 1000);
-    delay(10000);
-    inside_fan.setPower(33);
-    pwm.writeMicroseconds(15, 1250);
-    delay(10000);
-    inside_fan.setPower(66);
-    pwm.writeMicroseconds(15, 1500);
-    delay(10000);
-    inside_fan.setPower(100);
-    pwm.writeMicroseconds(15, 2000);
-    delay(10000);
+    // inside_fan.setPower(0);
+    // pwm.writeMicroseconds(15, 1000);
+    // delay(10000);
+    // inside_fan.setPower(33);
+    // pwm.writeMicroseconds(15, 1250);
+    // delay(10000);
+    // inside_fan.setPower(66);
+    // pwm.writeMicroseconds(15, 1500);
+    // delay(10000);
+    // inside_fan.setPower(100);
+    // pwm.writeMicroseconds(15, 2000);
+    // delay(10000);
 }

@@ -1,5 +1,5 @@
 //
-// ServoEaser.h -- Arduino library for Servo easing
+// ServoEaser.h -- Arduino library for T easing
 //
 // ServoEaser is an Arduino library makes doing animation-style movements 
 // with servos easier.
@@ -57,11 +57,11 @@ typedef float (*EasingFunc)(float t, float b, float c, float d);
 // arguments provided are: currPos of servo & movesIndex of move list (if appl)
 typedef void (*ArrivedFunc)(int currPos, int movesIndex);
 
-
+template <class T>
 class ServoEaser 
 {
 private:
-    Servo *servo;      // what servo we're operating on
+    T *servo;      // what servo we're operating on
     int frameMillis;  // minimum update time between servo moves
     float startPos;   // where servo started its tween
     float currPos;    // current servo position, best of our knowledge
@@ -89,16 +89,16 @@ private:
     void getNextPos();
     int angleToMicros(float angle);
 
-    // duplicate Servo min/max micros functionality
+    // duplicate servo min/max micros functionality
     int8_t min;   // minimum is this value times 4 added to MIN_PULSE_WIDTH    
     int8_t max;   // maximum is this value times 4 added to MAX_PULSE_WIDTH   
 
 public:
     
     // set up a servoeaser to use a particular servo
-    //void begin(Servo s, int frameTime, int startPos);
-    void begin(Servo& s, int frameTime); //, int startPos);
-    void begin(Servo& s, int frameTime, ServoMove* moves, int movesCount);
+    //void begin(T s, int frameTime, int startPos);
+    void begin(T& s, int frameTime); //, int startPos);
+    void begin(T& s, int frameTime, ServoMove* moves, int movesCount);
 
     void reset();
     
@@ -135,7 +135,7 @@ public:
     void setFlipped( boolean t );
     boolean isFlipped();
 
-    // mirrors of Servos min/max values, set these if you need differnt
+    // mirrors of Servos min/max values, set these if you need different
     // min/max microsecond bounds  (unfortunately, we can't get at 
     // Servo's values for these.  These values are only used if
     // you enable "useMicroseconds()"
@@ -148,6 +148,6 @@ public:
 
 };
 
-
+#include "ServoEaser_impl.h"
 
 #endif
