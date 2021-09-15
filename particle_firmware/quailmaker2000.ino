@@ -7,6 +7,8 @@
 // This #include statement was automatically added by the Particle IDE.
 #include <Adafruit_AM2315.h>
 
+#include "I2CFan.h"
+
 STARTUP(WiFi.selectAntenna(ANT_EXTERNAL));
 SYSTEM_MODE(SEMI_AUTOMATIC);
 SYSTEM_THREAD(ENABLED);
@@ -145,6 +147,7 @@ retained int current_angle = 0;
 String operating_mode = "initializing";
 
 Adafruit_PWMServoDriver pwm;
+I2CFan inside_fan(pwm, 0);
 
 Servo egg_turner;
 ServoEaser egg_easer;
@@ -279,16 +282,16 @@ void loop() {
     current_angle = egg_easer.getCurrPos();
     last_millis = millis();
     
-    pwm.setPin(0, 0);
+    inside_fan.setPower(0);
     pwm.writeMicroseconds(15, 1000);
     delay(10000);
-    pwm.setPin(0, 1023);
+    inside_fan.setPower(33);
     pwm.writeMicroseconds(15, 1250);
     delay(10000);
-    pwm.setPin(0, 2047);
+    inside_fan.setPower(66);
     pwm.writeMicroseconds(15, 1500);
     delay(10000);
-    pwm.setPin(0, 4095);
+    inside_fan.setPower(100);
     pwm.writeMicroseconds(15, 2000);
     delay(10000);
 }
