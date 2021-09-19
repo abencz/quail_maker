@@ -8,8 +8,12 @@ public:
 	I2CFan(Adafruit_PWMServoDriver &driver, uint8_t device_num_);
 
 	void setPower(uint8_t percent);
+	int getPower();
 
 private:
 	Adafruit_PWMServoDriver *i2c_driver;
 	uint8_t device_num;
+	
+public:
+	int power;
 };

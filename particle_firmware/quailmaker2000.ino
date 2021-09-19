@@ -35,9 +35,15 @@ void poll_sensor()
 // for the sake of having something complex enough that garbage won't be picked up as "valid"
 #define EEPROM_PARAM_VERSION 0x01010001ul
 
+// Egg Turner Hardware
+#define EGG_TURNER_1_DEVICE_ID 7
+#define EGG_TURNER_2_DEVICE_ID 8
+#define INTAKE_FAN_DEVICE_ID   12
+#define CIRCULATING_FAN_DEVICE_ID 0
+
 // boundaries
-#define EGG_SERVO_MIN_ANGLE 0
-#define EGG_SERVO_MAX_ANGLE 180
+#define EGG_SERVO_MIN_ANGLE 30
+#define EGG_SERVO_MAX_ANGLE 150
 
 class EggParams 
 {
@@ -140,18 +146,21 @@ public:
 
 EggParams params;
 
-const int servo_pin = D3;
 const int servo_frame_millis = 20;  // minimum time between servo updates
-const int egg_ease_time = 2000; // time to move eggs between positions [ms]
+const int egg_ease_time_load = 2000; // time to move eggs to load position [ms]
+const int egg_ease_time_turn = 180000; // time to move eggs between positions [ms]
 
 retained int current_angle = 0;
 String operating_mode = "initializing";
 
 Adafruit_PWMServoDriver pwm;
-I2CFan inside_fan(pwm, 0);
+I2CFan intake_fan(pwm, INTAKE_FAN_DEVICE_ID);
+I2CFan circulating_fan(pwm, CIRCULATING_FAN_DEVICE_ID);
 
-I2CServo egg_turner(pwm, 15);
-ServoEaser<I2CServo> egg_easer;
+I2CServo egg_turner_1(pwm, EGG_TURNER_1_DEVICE_ID);
+I2CServo egg_turner_2(pwm, EGG_TURNER_2_DEVICE_ID);
+ServoEaser<I2CServo> egg_easer_1;
+ServoEaser<I2CServo> egg_easer_2;
 Timer egg_timer(params.egg_turn_time, turn_eggs);
 Timer load_eggs_timer(30000, load_eggs);
 Timer start_turning_eggs_timer(60000, start_turning_eggs);
@@ -161,7 +170,8 @@ int load_eggs() {
     load_eggs_timer.stop();
     egg_timer.stop();
     operating_mode = "loading_eggs";
-    egg_easer.easeTo(params.load_angle, egg_ease_time);
+    egg_easer_1.easeTo(params.load_angle, egg_ease_time_load);
+    egg_easer_2.easeTo(params.load_angle, egg_ease_time_load);
     current_angle = params.load_angle;
     return 0;
 }
@@ -191,7 +201,9 @@ int go_to_angle(String data) {
     if (angle < EGG_SERVO_MIN_ANGLE || angle > EGG_SERVO_MAX_ANGLE)
         return 1;
 
-    egg_easer.easeTo(angle, egg_ease_time);
+    egg_easer_1.easeTo(angle, egg_ease_time_load);
+    egg_easer_2.easeTo(angle, egg_ease_time_load);
+    return 0;
 }
 
 int set_param_egg_turn_time(String data) {
@@ -206,6 +218,18 @@ int set_param_egg_turn_time(String data) {
     return result;
 }
 
+int set_circulating_fan_speed(String data) {
+    long speed = data.toInt();
+    circulating_fan.setPower(speed);
+    return 0;
+}
+
+int set_intake_fan_speed(String data) {
+    long speed = data.toInt();
+    intake_fan.setPower(speed);
+    return 0;
+}
+
 void turn_eggs()
 {
     int next_angle;
@@ -214,12 +238,13 @@ void turn_eggs()
     else
         next_angle = params.min_angle();
         
-    egg_easer.easeTo(next_angle, egg_ease_time);
+    egg_easer_1.easeTo(next_angle, egg_ease_time_turn);
+    egg_easer_2.easeTo(next_angle, egg_ease_time_turn);
 }
 
 void setup() {
     pwm.begin();
-    pwm.setPWMFreq(250);  // Analog servos run at ~60 Hz updates
+    pwm.setPWMFreq(120);  // Analog servos run at ~60 Hz updates
 
     sensor.begin();
     
@@ -231,18 +256,23 @@ void setup() {
         current_angle = params.center_angle;
     egg_timer.changePeriod(params.egg_turn_time);
     egg_timer.stop();
-    // egg_turner.attach(servo_pin);
-    egg_easer.begin(egg_turner, servo_frame_millis);
-    egg_easer.setCurrPos(current_angle);
+    egg_easer_1.begin(egg_turner_1, servo_frame_millis);
+    egg_easer_2.begin(egg_turner_2, servo_frame_millis);
+    egg_easer_1.setCurrPos(current_angle);
+    egg_easer_2.setCurrPos(current_angle);
     
     Particle.variable("temperature", temp);
     Particle.variable("rh", rh);
     Particle.variable("current_angle", current_angle);
     Particle.variable("operating_mode", operating_mode);
+    Particle.variable("circulating_fan_speed", circulating_fan.power);
+    Particle.variable("intake_fan_speed", intake_fan.power);
     Particle.function("load_eggs", load_eggs_function);
     Particle.function("set_param_egg_turn_time", set_param_egg_turn_time);
     Particle.function("start_turning_eggs", start_turning_eggs_function);
     Particle.function("go_to_angle", go_to_angle);
+    Particle.function("set_circulating_fan_speed", set_circulating_fan_speed);
+    Particle.function("set_intake_fan_speed", set_intake_fan_speed);
     
     // start polling sensor
     sensor_timer.start();
@@ -250,6 +280,9 @@ void setup() {
     // start timer to do auto load
     load_eggs_timer.start();
     start_turning_eggs_timer.start();
+    
+    circulating_fan.setPower(0);
+    intake_fan.setPower(0);
     
     // start Particle connection
     Particle.connect();
@@ -260,23 +293,12 @@ void loop() {
     
     // handle time rollover
     if(millis() < last_millis) {
-        egg_easer.reset();
+        egg_easer_1.reset();
+        egg_easer_2.reset();
     }
     
-    egg_easer.update();
-    current_angle = egg_easer.getCurrPos();
+    egg_easer_1.update();
+    egg_easer_2.update();
+    current_angle = egg_easer_1.getCurrPos();
     last_millis = millis();
-    
-    // inside_fan.setPower(0);
-    // pwm.writeMicroseconds(15, 1000);
-    // delay(10000);
-    // inside_fan.setPower(33);
-    // pwm.writeMicroseconds(15, 1250);
-    // delay(10000);
-    // inside_fan.setPower(66);
-    // pwm.writeMicroseconds(15, 1500);
-    // delay(10000);
-    // inside_fan.setPower(100);
-    // pwm.writeMicroseconds(15, 2000);
-    // delay(10000);
 }

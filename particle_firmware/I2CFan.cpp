@@ -1,6 +1,6 @@
 #include "I2CFan.h"
 
-I2CFan::I2CFan(Adafruit_PWMServoDriver &driver, uint8_t device) : i2c_driver(&driver), device_num(device) {}
+I2CFan::I2CFan(Adafruit_PWMServoDriver &driver, uint8_t device) : i2c_driver(&driver), device_num(device), power(0) {}
 
 void I2CFan::setPower(uint8_t percent)
 {
@@ -9,4 +9,10 @@ void I2CFan::setPower(uint8_t percent)
 		
 	uint16_t pwm = 4095 * percent / 100;
 	i2c_driver->setPin(device_num, pwm);
+	power = percent;
+}
+
+int I2CFan::getPower()
+{
+	return power;
 }
