@@ -16,17 +16,41 @@ SYSTEM_THREAD(ENABLED);
 
 // RH Sensor
 Adafruit_AM2315 sensor;
-double temp, rh;
+double temp = -1.0;
+double rh = -1.0;
 const int polling_interval = 10000;  // ms
 Timer sensor_timer(polling_interval, poll_sensor);
+
+#define SENSOR_POWER_CONTROL_PIN D2
+
+// power cycle sensor
+void init_sensor()
+{
+    pinMode(SENSOR_POWER_CONTROL_PIN, OUTPUT);
+    digitalWrite(SENSOR_POWER_CONTROL_PIN, HIGH);
+}
 
 // read RH sensor values into Particle variables
 void poll_sensor()
 {
+    digitalWrite(SENSOR_POWER_CONTROL_PIN, HIGH);
     float _temp, _rh;
-    sensor.readTemperatureAndHumidity(_temp, _rh);
-    temp = _temp;
-    rh = _rh;
+    bool success = sensor.readTemperatureAndHumidity(&_temp, &_rh);
+
+    if (success)
+    {
+        temp = _temp;
+        rh = _rh;
+    }
+    else
+    {
+        // if read failed, power sensor off so we can try again next time
+        digitalWrite(SENSOR_POWER_CONTROL_PIN, LOW);
+
+        // write bogus data
+        temp = -1.0;
+        rh = -1.0;
+    }
 }
 
 // Egg Turner
@@ -243,6 +267,7 @@ void turn_eggs()
 }
 
 void setup() {
+    init_sensor();
     pwm.begin();
     pwm.setPWMFreq(120);  // Analog servos run at ~60 Hz updates
 
