@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import csv
+import os
 from datetime import datetime, timedelta, timezone
 from flask import Flask, send_file
 from glob import glob
@@ -8,7 +9,7 @@ from tempfile import NamedTemporaryFile
 
 
 def get_csv_files(directory):
-    path = f"{directory}/*.csv"
+    path = os.path.join(directory, "*.csv")
     files = glob(path)
     return sorted(files)
 

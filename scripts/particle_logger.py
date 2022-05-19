@@ -66,6 +66,8 @@ def log_data(output_file, device_id, access_token, log_delay=3600):
 
 def parse_args():
     parser = argparse.ArgumentParser()
+    parser.add_argument("device_id", type=str)
+    parser.add_argument("access_token", type=str)
     parser.add_argument("-f", "--file-prefix", type=str, default="quail_maker")
     parser.add_argument("-d", "--log-delay", type=int, default=300)
 
@@ -73,14 +75,12 @@ def parse_args():
 
 
 def main():
-    device_id = "<tbd>"
-    access_token = "<tbd>"
     args = parse_args()
 
     filename = f"{args.file_prefix}-{datetime.now().timestamp()}.csv"
 
     with open(filename, "w", newline="") as csvfile:
-        log_data(csvfile, device_id, access_token, args.log_delay)
+        log_data(csvfile, args.device_id, args.access_token, args.log_delay)
 
 
 if __name__ == "__main__":
