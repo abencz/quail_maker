@@ -33,7 +33,14 @@ void init_sensor()
 // read RH sensor values into Particle variables
 void poll_sensor()
 {
-    digitalWrite(SENSOR_POWER_CONTROL_PIN, HIGH);
+    int state = digitalRead(SENSOR_POWER_CONTROL_PIN);
+
+    if (state == LOW) {
+        // if last read failed, turn on sensor and return to give it time to "warm up"
+        digitalWrite(SENSOR_POWER_CONTROL_PIN, HIGH);
+        return;
+    }
+
     float _temp, _rh;
     bool success = sensor.readTemperatureAndHumidity(&_temp, &_rh);
 
